@@ -27,7 +27,7 @@ static int32_t _loop_delay_s = 10;
 #define LOOP_DELAY_S_MIN 0
 
 
-void wake_system_thread(void)
+static void wake_system_thread(void)
 {
     k_wakeup(_system_thread);
 }
@@ -53,7 +53,7 @@ static enum golioth_settings_status on_loop_delay_setting(int32_t new_value, voi
     return GOLIOTH_SETTINGS_SUCCESS;
 }
 
-int app_settings_register(struct golioth_client *client)
+static int app_settings_register(struct golioth_client *client)
 {
     struct golioth_settings *settings = golioth_settings_init(client);
 
