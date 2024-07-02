@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(example_upload_image, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 
 #include "fables.h"
+#include "arducam/camera.h"
 
 /* Current firmware version; update in prj.conf or via build argument */
 static const char *_current_version = CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION;
@@ -135,7 +136,7 @@ static int upload_txt_file(void)
     struct block_upload_source bu_ctx = {.buf = (uint8_t *) &fables, .len = fables_len};
 
     int err = golioth_stream_set_blockwise_sync(client,
-                                                "blockupload",
+                                                "file_upload",
                                                 GOLIOTH_CONTENT_TYPE_OCTET_STREAM,
                                                 block_upload_read_chunk,
                                                 &bu_ctx);
@@ -143,10 +144,67 @@ static int upload_txt_file(void)
     return err;
 }
 
+enum golioth_status block_upload_camera_image_cb(uint32_t block_idx,
+                                                 uint8_t *block_buffer,
+                                                 size_t *block_size,
+                                                 bool *is_last,
+                                                 void *arg)
+{
+    int err = 0;
+
+    if (!arg)
+    {
+        LOG_ERR("arg was NULL but should have been pointer to camera_module struct");
+        err = -EAGAIN;
+        goto error_camera_block_upload;
+    }
+
+    size_t bytes_remaining;
+    err = camera_get_next_block(arg, block_buffer, block_size, is_last, &bytes_remaining);
+
+    if (err)
+    {
+        goto error_camera_block_upload;
+    }
+
+    if ((*block_size == 0) && (!*is_last))
+    {
+
+        LOG_ERR("Received 0 bytes from camera but block is not marked as last.");
+        err = -ENODATA;
+        goto error_camera_block_upload;
+    }
+
+    LOG_DBG("Uploading block_id: %u block_size: %u is_last: %d Bytes remaining: %u",
+            block_idx,
+            *block_size,
+            *is_last,
+            bytes_remaining);
+
+    return 0;
+
+error_camera_block_upload:
+    *block_size = 0;
+    *is_last = 1;
+    return err;
+}
+
 int main(void)
 {
     LOG_DBG("Start Golioth example_upload_image");
     LOG_INF("Firmware version: %s", CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION);
+
+    LOG_DBG("Initializing camera...");
+    struct camera_module *cam_mod = camera_init();
+    if (!cam_mod)
+    {
+        LOG_ERR("Camera init failed.");
+        return -ENODEV;
+    }
+    else
+    {
+        LOG_DBG("Camera init complete!");
+    }
 
     /* Get system thread id so loop delay change event can wake main */
     _system_thread = k_current_get();
@@ -192,6 +250,17 @@ int main(void)
             else
             {
                 LOG_INF("Block upload successful!");
+            }
+
+            camera_capture_image(cam_mod);
+            err = golioth_stream_set_blockwise_sync(client,
+                                                    "file_upload",
+                                                    GOLIOTH_CONTENT_TYPE_OCTET_STREAM,
+                                                    block_upload_camera_image_cb,
+                                                    (void *)cam_mod);
+            if (!err)
+            {
+                LOG_INF("Image upload successful!");
             }
         }
 

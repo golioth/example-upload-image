@@ -1,5 +1,5 @@
 filter:
-  path: "/blockupload*"
+  path: "/file_upload*"
   content_type: application/octet-stream
 steps:
   - name: step0
