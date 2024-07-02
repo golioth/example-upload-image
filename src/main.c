@@ -4,15 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "golioth/golioth_status.h"
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(example_template, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(example_upload_image, LOG_LEVEL_DBG);
 
 #include <golioth/client.h>
 #include <golioth/fw_update.h>
 #include <golioth/settings.h>
+#include <golioth/stream.h>
 #include <samples/common/net_connect.h>
 #include <samples/common/sample_credentials.h>
 #include <zephyr/kernel.h>
+
+#include "fables.h"
 
 /* Current firmware version; update in prj.conf or via build argument */
 static const char *_current_version = CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION;
@@ -26,6 +30,13 @@ static int32_t _loop_delay_s = 10;
 #define LOOP_DELAY_S_MAX 43200
 #define LOOP_DELAY_S_MIN 0
 
+#define BU_SIZE 1024
+
+struct block_upload_source
+{
+    uint8_t *buf;
+    size_t len;
+};
 
 static void wake_system_thread(void)
 {
@@ -72,9 +83,70 @@ static int app_settings_register(struct golioth_client *client)
     return err;
 }
 
+/* Callback invoked by the Golioth SDK to read the next block of data
+   data to send to Golioth */
+static enum golioth_status block_upload_read_chunk(uint32_t block_idx,
+                                                   uint8_t *block_buffer,
+                                                   size_t *block_size,
+                                                   bool *is_last,
+                                                   void *arg)
+{
+    const struct block_upload_source *bu_source = arg;
+    size_t bu_offset = block_idx * BU_SIZE;
+    size_t bu_size = bu_source->len - bu_offset;
+
+    LOG_DBG("block-idx: %u bu_offset: %u bytes_remaining: %u", block_idx, bu_offset, bu_size);
+
+    if (bu_offset >= bu_source->len)
+    {
+        LOG_ERR("Calculated offset is past end of buffer: %d", bu_offset);
+        goto bu_error;
+    }
+
+    if (bu_size < 0)
+    {
+        LOG_ERR("Calculated size for next block is < 0: %d", bu_size);
+        goto bu_error;
+    }
+
+    if (bu_size <= BU_SIZE)
+    {
+        *block_size = bu_size;
+        *is_last = true;
+    }
+    else
+    {
+        *block_size = BU_SIZE;
+        *is_last = false;
+    }
+
+    memcpy(block_buffer, bu_source->buf + bu_offset, *block_size);
+    return GOLIOTH_OK;
+
+bu_error:
+    *block_size = 0;
+    *is_last = true;
+
+    return GOLIOTH_ERR_NO_MORE_DATA;
+}
+
+static int upload_txt_file(void)
+{
+    /* Test function that uses block upload with a .txt file */
+    struct block_upload_source bu_ctx = {.buf = (uint8_t *) &fables, .len = fables_len};
+
+    int err = golioth_stream_set_blockwise_sync(client,
+                                                "blockupload",
+                                                GOLIOTH_CONTENT_TYPE_OCTET_STREAM,
+                                                block_upload_read_chunk,
+                                                &bu_ctx);
+
+    return err;
+}
+
 int main(void)
 {
-    LOG_DBG("Start Golioth example_template");
+    LOG_DBG("Start Golioth example_upload_image");
     LOG_INF("Firmware version: %s", CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION);
 
     /* Get system thread id so loop delay change event can wake main */
@@ -102,10 +174,27 @@ int main(void)
     k_sem_take(&connected, K_FOREVER);
 
     int counter = 0;
+    int err;
 
     while (true)
     {
         LOG_INF("Golioth hello! %d", counter);
+
+        char buf[32];
+        snprintk(buf, sizeof(buf), "{\"counter\":%d}", counter);
+
+        if (counter == 4)
+        {
+            err = upload_txt_file();
+            if (err)
+            {
+                LOG_ERR("Error during block upload: %d", err);
+            }
+            else
+            {
+                LOG_INF("Block upload successful!");
+            }
+        }
 
         ++counter;
         k_sleep(K_SECONDS(_loop_delay_s));

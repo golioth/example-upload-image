@@ -1,11 +1,34 @@
-# Golioth Example Template
+# Golioth Example Upload Image
 
 ## Overview
 
-Barebones starting point for building Golioth examples using the
-"manifest repository" approach that places the example in an `app`
-folder that is a sibling to the `deps` folder where all dependencies are
-installed.
+This firmware uploads large files to an Amazon S3 bucket.
+
+The application will connect to Golioth and start sending Hello log
+messages every 5 seconds. After the fourth message a sample text file of
+2246 bytes will be uploaded as a way for you to verify the data route is
+configured correctly.
+
+## Supported Boards
+
+- Nordic nrf9160dk
+
+## Data Route Setup
+
+- Create an Amazon S3 bucket and generate a credential that allows
+  upload to it.
+- Use add the contents of the YAML file in the pipelines directory of
+  this repository to your Golioth project.
+- Use your S3 credential to set up the follow secrets in your Golioth
+  project:
+  - AWS_S3_ACCESS_KEY
+  - AWS_S3_ACCESS_SECRET
+
+You may follow the [Local Setup](#local-setup) guide to build your own
+firmware, or download and use the precompiled binary from the latest
+release. Note that you will need to [add Golioth PSK-ID/PSK to your
+device](#configure-authentication-credential) before it can connect to
+Golioth.
 
 ## Local Setup
 
@@ -16,9 +39,9 @@ installed.
 
 ```
 cd ~
-mkdir golioth-example-template
-python -m venv golioth-example-template/.venv
-source golioth-example-template/.venv/bin/activate
+mkdir example-upload-image
+python -m venv example-upload-image/.venv
+source example-upload-image/.venv/bin/activate
 pip install wheel west
 ```
 
@@ -28,11 +51,11 @@ Run one of these two initializations based on your target board:
 
 ```
 # Initalize for Zephyr
-cd ~/golioth-example-template
+cd ~/example-upload-image
 west init -m git@github.com:golioth/example-template.git --mf west-zephyr.yml .
 
 # Initalize for NCS (Nordic boards only)
-cd ~/golioth-example-template
+cd ~/example-upload-image
 west init -m git@github.com:golioth/example-template.git --mf west-ncs.yml .
 
 ```
@@ -81,40 +104,10 @@ credentials and reboot:
 
 ## Features
 
-This example currently implements the following Golioth services
+This example implements the following Golioth services
 
 * Runtime credentials
 * Backend Logging
 * Device Settings
 * OTA Firmware Update
-
-## Using this template to start a new project
-
-Fork this template to create your own Reference Design. After checking
-out your fork, use the following approach to pull in future changes:
-
-* Setup
-
-  * Create a `template` remote based on the Reference Design Template
-    repository
-
-* Merge in template changes
-
-  * Fetch template changes and tags
-  * Merge template release tag into your `main` (or other branch)
-  * Resolve merge conflicts (if any) and commit to your repository
-
-```
-# Setup
-git remote add template https://github.com/golioth/example-template.git
-git fetch template --tags
-
-# Merge in template changes
-git fetch template --tags
-git checkout your_local_branch
-git merge exampletemplate_v0.1.0
-
-# Resolve merge conflicts if necessary
-git add resolved_files
-git commit
-```
+* Stream data using block upload
