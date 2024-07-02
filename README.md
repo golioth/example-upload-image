@@ -2,16 +2,34 @@
 
 ## Overview
 
-This firmware uploads large files to an Amazon S3 bucket.
+This firmware uploads large files to an Amazon S3 bucket. It
+demonstrates capturing an image with a camera and uploading using the
+Golioth Firmware SDK for blockwise upload.
 
 The application will connect to Golioth and start sending Hello log
 messages every 5 seconds. After the fourth message a sample text file of
 2246 bytes will be uploaded as a way for you to verify the data route is
-configured correctly.
+configured correctly. The camera will then capture an image and upload
+it.
 
 ## Supported Boards
 
 - Nordic nrf9160dk
+
+### Camera connections
+
+This demo uses the [Arducam Mega
+5MP-AF](https://www.arducam.com/product/presale-mega-5mp-color-rolling-shutter-camera-module-with-autofocus-lens-for-any-microcontroller/)
+model.
+
+| Function | nRF9160DK | Arducam Pin
+| -------- | --------- | -----------
+| VCC      | 5V        | 1 (red)
+| GND      | GND       | 2 (black)
+| CS       | P0.10     | 6 (orange)
+| MOSI     | P0.11     | 5 (yellow)
+| MISO     | P0.12     | 4 (brown)
+| SCK      | P0.13     | 3 (white)
 
 ## Data Route Setup
 
@@ -47,16 +65,10 @@ pip install wheel west
 
 ### Initialize and install
 
-Run one of these two initializations based on your target board:
-
 ```
-# Initalize for Zephyr
-cd ~/example-upload-image
-west init -m git@github.com:golioth/example-template.git --mf west-zephyr.yml .
-
 # Initalize for NCS (Nordic boards only)
 cd ~/example-upload-image
-west init -m git@github.com:golioth/example-template.git --mf west-ncs.yml .
+west init -m git@github.com:golioth/example-upload-image.git --mf west-ncs.yml .
 
 ```
 
@@ -76,13 +88,6 @@ assign to this build.
 
 Then run the following commands to build and program the firmware based
 on the device you are using.
-
-### Zephyr build commands
-
-```
-$ (.venv) west build -p -b <my_board_name> --sysbuild app
-$ (.venv) west flash
-```
 
 ### NCS build commands
 

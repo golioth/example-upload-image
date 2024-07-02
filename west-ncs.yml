@@ -31,5 +31,11 @@ manifest:
           - trusted-firmware-m
           - zcbor
 
+    - name: arducam-mega
+      path: deps/modules/lib/arducam-mega
+      revision: v2.0.9
+      url: https://github.com/ArduCAM/Arducam_Mega
+
   self:
     path: app
+

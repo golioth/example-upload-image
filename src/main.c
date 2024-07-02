@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(example_upload_image, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 
 #include "fables.h"
+#include "arducam/camera.h"
 
 /* Current firmware version; update in prj.conf or via build argument */
 static const char *_current_version = CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION;
@@ -148,6 +149,10 @@ int main(void)
     LOG_DBG("Start Golioth example_upload_image");
     LOG_INF("Firmware version: %s", CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION);
 
+    LOG_DBG("Initializing camera...");
+    camera_init();
+    LOG_DBG("Camera init complete!");
+
     /* Get system thread id so loop delay change event can wake main */
     _system_thread = k_current_get();
 
@@ -192,6 +197,21 @@ int main(void)
             else
             {
                 LOG_INF("Block upload successful!");
+            }
+
+            camera_capture_image();
+            err = golioth_stream_set_blockwise_sync(client,
+                                                    "blockupload",
+                                                    GOLIOTH_CONTENT_TYPE_OCTET_STREAM,
+                                                    camera_get_next_block,
+                                                    NULL);
+            if (err)
+            {
+                LOG_ERR("Error uploading image: %d", err);
+            }
+            else
+            {
+                LOG_INF("Image upload successful!");
             }
         }
 

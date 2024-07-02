@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Golioth, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Arducam Mega is a digital camera with an SPI interface
+
+compatible: "arducam,mega"
+
+include: [spi-device.yaml]
