@@ -30,8 +30,6 @@ static int32_t _loop_delay_s = 5;
 #define LOOP_DELAY_S_MAX 43200
 #define LOOP_DELAY_S_MIN 0
 
-#define BU_SIZE 1024
-
 struct block_upload_source
 {
     uint8_t *buf;
@@ -91,8 +89,9 @@ static enum golioth_status block_upload_read_chunk(uint32_t block_idx,
                                                    bool *is_last,
                                                    void *arg)
 {
+    size_t bu_max_block_size = *block_size;
     const struct block_upload_source *bu_source = arg;
-    size_t bu_offset = block_idx * BU_SIZE;
+    size_t bu_offset = block_idx * bu_max_block_size;
     size_t bu_size = bu_source->len - bu_offset;
 
     LOG_DBG("block-idx: %u bu_offset: %u bytes_remaining: %u", block_idx, bu_offset, bu_size);
@@ -109,14 +108,14 @@ static enum golioth_status block_upload_read_chunk(uint32_t block_idx,
         goto bu_error;
     }
 
-    if (bu_size <= BU_SIZE)
+    if (bu_size <= bu_max_block_size)
     {
         *block_size = bu_size;
         *is_last = true;
     }
     else
     {
-        *block_size = BU_SIZE;
+        *block_size = bu_max_block_size;
         *is_last = false;
     }
 
