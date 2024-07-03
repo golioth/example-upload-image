@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(example_upload_image, LOG_LEVEL_DBG);
 #include <samples/common/net_connect.h>
 #include <samples/common/sample_credentials.h>
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "fables.h"
 #include "arducam/camera.h"
@@ -23,13 +25,23 @@ LOG_MODULE_REGISTER(example_upload_image, LOG_LEVEL_DBG);
 static const char *_current_version = CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION;
 
 static struct golioth_client *client;
-K_SEM_DEFINE(connected, 0, 1);
 
+/* Program flow control */
 static k_tid_t _system_thread = 0;
+K_SEM_DEFINE(connected, 0, 1);
+K_SEM_DEFINE(allow_button_read, 0, 1);
+K_SEM_DEFINE(image_upload, 0, 1);
+K_SEM_DEFINE(text_upload, 0, 1);
 
+/* Device Settings Configuration */
 static int32_t _loop_delay_s = 5;
 #define LOOP_DELAY_S_MAX 43200
 #define LOOP_DELAY_S_MIN 0
+
+/* Button Configuration */
+static const struct gpio_dt_spec btn1 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static const struct gpio_dt_spec btn2 = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
+static struct gpio_callback button_cb_data;
 
 struct block_upload_source
 {
@@ -144,6 +156,73 @@ static int upload_txt_file(void)
     return err;
 }
 
+void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+    LOG_DBG("Button %d pressed at %" PRIu32, pins, k_cycle_get_32());
+
+    if (k_sem_take(&allow_button_read, K_NO_WAIT) == 0)
+    {
+        if (pins == (1 << btn1.pin))
+        {
+            k_sem_give(&image_upload);
+            wake_system_thread();
+        }
+        else if (pins == (1 << btn2.pin))
+        {
+            k_sem_give(&text_upload);
+            wake_system_thread();
+        }
+        else
+        {
+            k_sem_give(&allow_button_read);
+        }
+    }
+}
+
+void init_buttons(void)
+{
+    int ret;
+
+    LOG_INF("Setup buttons");
+
+    const struct gpio_dt_spec *button[] = {&btn1, &btn2};
+
+    for (uint8_t i = 0; i < ARRAY_SIZE(button); i++)
+    {
+        if (!gpio_is_ready_dt(button[i]))
+        {
+            LOG_ERR("Error: button device %s is not ready", button[i]->port->name);
+            continue;
+        }
+
+        ret = gpio_pin_configure_dt(button[i], GPIO_INPUT);
+        if (ret != 0)
+        {
+            LOG_ERR("Error %d: failed to configure %s pin %d",
+                    ret,
+                    button[i]->port->name,
+                    button[i]->pin);
+            continue;
+        }
+
+        ret = gpio_pin_interrupt_configure_dt(button[i], GPIO_INT_EDGE_TO_ACTIVE);
+        if (ret != 0)
+        {
+            LOG_ERR("Error %d: failed to configure interrupt on %s pin %d",
+                    ret,
+                    button[i]->port->name,
+                    button[i]->pin);
+            continue;
+        }
+
+        LOG_INF("Set up button at %s pin %d", button[i]->port->name, button[i]->pin);
+    }
+
+    gpio_init_callback(&button_cb_data, button_pressed, BIT(btn1.pin) | BIT(btn2.pin));
+    /* This assumes the buttons share the same port */
+    gpio_add_callback(btn1.port, &button_cb_data);
+}
+
 int main(void)
 {
     LOG_DBG("Start Golioth example_upload_image");
@@ -152,6 +231,9 @@ int main(void)
     LOG_DBG("Initializing camera...");
     camera_init();
     LOG_DBG("Camera init complete!");
+
+    /* Setup buttons */
+    init_buttons();
 
     /* Get system thread id so loop delay change event can wake main */
     _system_thread = k_current_get();
@@ -176,9 +258,15 @@ int main(void)
 
     /* Block until connected to Golioth */
     k_sem_take(&connected, K_FOREVER);
+    k_msleep(2000); /* allow connection logs to display */
 
     int counter = 0;
     int err;
+
+    k_sem_give(&allow_button_read);
+    LOG_INF("###############################################");
+    LOG_INF("# Press button 1 to capture and upload image. #");
+    LOG_INF("###############################################");
 
     while (true)
     {
@@ -187,7 +275,10 @@ int main(void)
         char buf[32];
         snprintk(buf, sizeof(buf), "{\"counter\":%d}", counter);
 
-        if (counter == 4)
+        ++counter;
+        k_sleep(K_SECONDS(_loop_delay_s));
+
+        if (k_sem_take(&text_upload, K_NO_WAIT) == 0)
         {
             err = upload_txt_file();
             if (err)
@@ -198,7 +289,11 @@ int main(void)
             {
                 LOG_INF("Block upload successful!");
             }
+            k_sem_give(&allow_button_read);
+        }
 
+        if (k_sem_take(&image_upload, K_NO_WAIT) == 0)
+        {
             camera_capture_image();
             err = golioth_stream_set_blockwise_sync(client,
                                                     "blockupload",
@@ -213,9 +308,7 @@ int main(void)
             {
                 LOG_INF("Image upload successful!");
             }
+            k_sem_give(&allow_button_read);
         }
-
-        ++counter;
-        k_sleep(K_SECONDS(_loop_delay_s));
     }
 }
