@@ -17,6 +17,9 @@ static ArducamCamera *cam_p;
  * value may be any int */
 #define ARDUCAM_CS_PIN 42
 
+/* ArduCamera library lists 255 byte limit on reading from buffer. Use lower round+ number */
+#define ARDUCAM_READ_CHUNK_SIZE 128
+
 void camera_init(void)
 {
     camera_mod = createArducamCamera(ARDUCAM_CS_PIN);
@@ -57,8 +60,37 @@ enum golioth_status camera_get_next_block(uint32_t block_idx,
         goto camera_chunk_error;
     }
 
-    *block_size = readBuff(cam_p, block_buffer, max_block_size);
-    *is_last = (cam_p->receivedLength == 0) ? true : false;
+    /*
+     * The Arducam library lists a limit of 255 for each readBuff() operation.
+     * Make smaller reads from the camera when filling the block_buffer.
+     */
+    size_t bytes_copied = 0;
+
+    while (true)
+    {
+        size_t bytes_to_copy = MIN(max_block_size - bytes_copied, ARDUCAM_READ_CHUNK_SIZE);
+
+        bytes_copied += readBuff(cam_p, block_buffer + bytes_copied, bytes_to_copy);
+
+        if (cam_p->receivedLength == 0) {
+            *is_last = true;
+            *block_size = bytes_copied;
+            break;
+        }
+
+        if (bytes_copied == max_block_size)
+        {
+            *is_last = false;
+            *block_size = bytes_copied;
+            break;
+        }
+
+        if (bytes_copied > max_block_size)
+        {
+            LOG_ERR("Overflowed block_buffer");
+            goto camera_chunk_error;
+        }
+    }
 
     LOG_DBG("Uploading block_id: %u block_size: %u is_last: %d Bytes remaining: %u",
             block_idx,
