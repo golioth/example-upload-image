@@ -6,11 +6,10 @@ This firmware uploads large files to an Amazon S3 bucket. It
 demonstrates capturing an image with a camera and uploading using the
 Golioth Firmware SDK for blockwise upload.
 
-The application will connect to Golioth and start sending Hello log
-messages every 5 seconds. After the fourth message a sample text file of
-2246 bytes will be uploaded as a way for you to verify the data route is
-configured correctly. The camera will then capture an image and upload
-it.
+The application will connect to Golioth and await user input. Pressing
+Button 1 will capture an image from the camera and upload to Golioth.
+Button 2 uploads a sample text file of 2246 bytes will be uploaded as a
+way for you to verify the data route is configured correctly.
 
 ## Supported Boards
 
