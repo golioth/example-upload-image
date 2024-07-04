@@ -18,6 +18,7 @@ manifest:
           - zephyr
           - cmsis
           - hal_espressif
+          - hal_nxp
           - mbedtls
           - mcuboot
           - net-tools
