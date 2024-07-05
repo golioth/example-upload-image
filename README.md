@@ -30,6 +30,13 @@ release. Note that you will need to [add Golioth PSK-ID/PSK to your
 device](#configure-authentication-credential) before it can connect to
 Golioth.
 
+## Supported Boards
+
+| Vendor    | Model                      | Zephyr name          |
+| --------- | -------------------------- | -------------------- |
+| Espressif | ESP32-DevkitC              | esp32_devkitc_wrover |
+| Nordic    | nRF9160 DK                 | nrf9160dk_nrf9160_ns |
+
 ## Local Setup
 
 > :important: Do not clone this repo using git. Zephyr's ``west`` meta
@@ -80,15 +87,15 @@ on the device you are using.
 ### Zephyr build commands
 
 ```
-$ (.venv) west build -p -b <my_board_name> --sysbuild app
-$ (.venv) west flash
+west build -p -b <my_board_name> --sysbuild app
+west flash
 ```
 
 ### NCS build commands
 
 ```
-$ (.venv) west build -p -b nrf9160dk_nrf9160_ns app
-$ (.venv) west flash
+west build -p -b nrf9160dk_nrf9160_ns app
+west flash
 ```
 
 ### Configure Authentication credential
@@ -111,3 +118,23 @@ This example implements the following Golioth services
 * Device Settings
 * OTA Firmware Update
 * Stream data using block upload
+
+## Switch Between Zephyr and NCS
+
+After initializing your local repository, you may switch between
+building for Zephyr boards and building for NCS boards by using the
+following commands:
+
+### Switch to NCS Build
+
+```
+west config manifest.file west-ncs.yml
+west update
+```
+
+### Switch to Zephyr Build
+
+```
+west config manifest.file west-zephyr.yml
+west update
+```
