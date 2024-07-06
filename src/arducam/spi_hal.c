@@ -30,13 +30,13 @@ void spiCsOutputMode(int cs)
 void spiCsHigh(int cs)
 {
     ARG_UNUSED(cs);
-    gpio_pin_set_dt(&arducam_cs, 1);
+    gpio_pin_set_dt(&arducam_cs, 0);
 }
 
 void spiCsLow(int cs)
 {
     ARG_UNUSED(cs);
-    gpio_pin_set_dt(&arducam_cs, 0);
+    gpio_pin_set_dt(&arducam_cs, 1);
 }
 
 uint8_t spiReadWriteByte(uint8_t val)

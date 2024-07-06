@@ -13,7 +13,10 @@ way for you to verify the data route is configured correctly.
 
 ## Supported Boards
 
-- Nordic nrf9160dk
+| Vendor    | Model                      | Zephyr name          |
+| --------- | -------------------------- | -------------------- |
+| Espressif | ESP32-DevkitC              | esp32_devkitc_wrover |
+| Nordic    | nRF9160 DK                 | nrf9160dk_nrf9160_ns |
 
 ### Camera connections
 
@@ -21,14 +24,21 @@ This demo uses the [Arducam Mega
 5MP-AF](https://www.arducam.com/product/presale-mega-5mp-color-rolling-shutter-camera-module-with-autofocus-lens-for-any-microcontroller/)
 model.
 
-| Function | nRF9160DK | Arducam Pin
-| -------- | --------- | -----------
-| VCC      | 5V        | 1 (red)
-| GND      | GND       | 2 (black)
-| CS       | P0.10     | 6 (orange)
-| MOSI     | P0.11     | 5 (yellow)
-| MISO     | P0.12     | 4 (brown)
-| SCK      | P0.13     | 3 (white)
+| Function | Arducam Pin | nRF9160DK |  esp32
+| -------- | ----------- | --------- |  ------
+| VCC      | 1 (red)     | 5V        |  3.3V
+| GND      | 2 (black)   | GND       |  GND
+| CS       | 6 (orange)  | P0.10     |  GPIO15
+| MOSI     | 5 (yellow)  | P0.11     |  GPIO13
+| MISO     | 4 (brown)   | P0.12     |  GPIO12
+| SCK      | 3 (white)   | P0.13     |  GPIO27
+
+### ESP32 Extra Setup
+
+Connect two momentary push buttons as follows:
+
+- Button1: GPIO26---Switch---GND
+- Button2: GPIO27---Switch---GND
 
 ## Data Route Setup
 
@@ -46,13 +56,6 @@ firmware, or download and use the precompiled binary from the latest
 release. Note that you will need to [add Golioth PSK-ID/PSK to your
 device](#configure-authentication-credential) before it can connect to
 Golioth.
-
-## Supported Boards
-
-| Vendor    | Model                      | Zephyr name          |
-| --------- | -------------------------- | -------------------- |
-| Espressif | ESP32-DevkitC              | esp32_devkitc_wrover |
-| Nordic    | nRF9160 DK                 | nrf9160dk_nrf9160_ns |
 
 ## Local Setup
 
