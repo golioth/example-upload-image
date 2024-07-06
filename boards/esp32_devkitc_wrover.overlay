@@ -1,3 +1,51 @@
+/*
+ * Copyright (c) 2024 Golioth, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+  aliases {
+    sw0 = &user0;
+    sw1 = &user1;
+  };
+
+  gpio_keys {
+    compatible = "gpio-keys";
+    user0: user0 {
+      gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+    };
+    user1: user1 {
+      gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+    };
+  };
+};
+
+&spi2 {
+  status = "okay";
+  cs-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+  arducam: arducam@0 {
+    compatible = "arducam,mega";
+    reg = <0>;
+    spi-max-frequency = <8000000>;
+  };
+};
+
 &wifi {
-	status = "okay";
+  status = "okay";
+};
+
+&pinctrl {
+  /* We must remove the CS pin so the the ESP32 hardware doesn't
+   * drive it, overriding the library control
+   */
+  spim2_default: spim2_default {
+    group1 {
+      pinmux = <SPIM2_MISO_GPIO12>, <SPIM2_SCLK_GPIO14>;
+    };
+    group2 {
+      pinmux = <SPIM2_MOSI_GPIO13>;
+      output-low;
+    };
+  };
 };

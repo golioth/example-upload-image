@@ -1,8 +1,33 @@
-# Copyright (c) 2023 Golioth, Inc.
+# Copyright (c) 2024 Golioth, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    The Arducam Mega is a digital camera with an SPI interface
+  The Arducam Mega is a digital camera with an SPI interface.
+
+  Add the Arducam as a subnode of an SPI peripheral:
+
+  &spi2 {
+    status = "okay";
+    cs-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+    arducam: arducam@0 {
+      compatible = "arducam,mega";
+      reg = <0>;
+      spi-max-frequency = <8000000>;
+    };
+  };
+
+  Above:
+
+  - A Chip-select pin has been specified for spi2 using the
+    cs-gpios property. The cs-gpio may be omitted if it is
+    already set in the board definition.
+
+  Note:
+
+  - The library controls the CS pin. For boards that have
+    hardware-controlled chip-select it is necessary to remove
+    the hardware-based CS assignment using pinctrl. The ESP32
+    is one example of this.
 
 compatible: "arducam,mega"
 

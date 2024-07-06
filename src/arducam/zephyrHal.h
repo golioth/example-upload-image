@@ -1,6 +1,11 @@
 #ifndef __ZEPHYRHAL_H
 #define __ZEPHYRHAL_H
 
+#ifndef __ESP32HAL_H
+#define __ESP32HAL_H
+/* When building for ESP32, ensure the Arducam library doesn't include its ESP32 header file. */
+#endif /* __ESP32HAL_H */
+
 #include "spi_hal.h"
 
 #define delayMs(ms) k_sleep(K_MSEC(ms))
