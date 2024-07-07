@@ -22,6 +22,7 @@ The application will connect to Golioth and await user input.
 | --------- | -------------------------- | -------------------- |
 | Espressif | ESP32-DevkitC              | esp32_devkitc_wrover |
 | Nordic    | nRF9160 DK                 | nrf9160dk_nrf9160_ns |
+| NXP       | i.MX RT1024 Evaluation Kit | mimxrt1024_evk       |
 
 ### Camera connections
 
@@ -29,14 +30,14 @@ This demo uses the [Arducam Mega
 5MP-AF](https://www.arducam.com/product/presale-mega-5mp-color-rolling-shutter-camera-module-with-autofocus-lens-for-any-microcontroller/)
 model.
 
-| Function | Arducam Pin | nRF9160DK |  esp32
-| -------- | ----------- | --------- |  ------
-| VCC      | 1 (red)     | 5V        |  3.3V
-| GND      | 2 (black)   | GND       |  GND
-| CS       | 6 (orange)  | P0.10     |  GPIO15
-| MOSI     | 5 (yellow)  | P0.11     |  GPIO13
-| MISO     | 4 (brown)   | P0.12     |  GPIO12
-| SCK      | 3 (white)   | P0.13     |  GPIO27
+| Function | Arducam Pin | nRF9160DK |  esp32  |  mimxrt1024_evk |
+| -------- | ----------- | --------- |  ------ |  -------------- |
+| VCC      | 1 (red)     | 5V        |  3.3V   |  3.3V  (J20.08) |
+| GND      | 2 (black)   | GND       |  GND    |  GND   (J20.12) |
+| CS       | 6 (orange)  | P0.10     |  GPIO15 |  b1_13 (J18.08) |
+| MOSI     | 5 (yellow)  | P0.11     |  GPIO13 |  b1_14 (J18.12) |
+| MISO     | 4 (brown)   | P0.12     |  GPIO12 |  b1_15 (J18.10) |
+| SCK      | 3 (white)   | P0.13     |  GPIO27 |  b1_12 (J18.06) |
 
 ### ESP32 Extra Setup
 
@@ -44,6 +45,13 @@ Connect two momentary push buttons as follows:
 
 - Button1: GPIO26---Switch---GND
 - Button2: GPIO27---Switch---GND
+
+### NXP mimxrt1024_evk Extra Setup
+
+The switch labelled `SW4` serves as Button 1. Connect one additional
+momentary push button as follows:
+
+- Button2: b1_10 (J18.2)---Switch---GND
 
 ## Data Route Setup
 
@@ -111,8 +119,15 @@ on the device you are using.
 
 ### Zephyr build commands
 
+Choose the build command for your board.
+
 ```
-west build -p -b <my_board_name> --sysbuild app
+# ESP32
+west build -p -b esp32_devkitc_wrover --sysbuild app
+west flash
+
+# mimxrt1024
+west build -p -b mimxrt1024_evk --sysbuild app
 west flash
 ```
 

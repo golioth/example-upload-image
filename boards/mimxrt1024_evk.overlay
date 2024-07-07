@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 Golioth, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+  aliases {
+    sw1 = &user1;
+  };
+
+  gpio_keys {
+    compatible = "gpio-keys";
+    user1: user1 {
+      gpios = <&gpio1 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+    };
+  };
+};
+
+&lpspi3 {
+  status = "okay";
+
+  pinctrl-0 = < &pinmux_lpspi3 >;
+  pinctrl-names = "default";
+  cs-gpios = <&gpio1 29 GPIO_ACTIVE_LOW>;
+
+  arducam: arducam@0 {
+    compatible = "arducam,mega";
+    reg = <0>;
+    spi-max-frequency = <8000000>;
+  };
+};
+
+&pinctrl {
+  pinmux_lpspi3: pinmux_lpspi3 {
+    group0 {
+      pinmux = <&iomuxc_gpio_ad_b1_12_lpspi3_sck>,
+        <&iomuxc_gpio_ad_b1_13_lpspi3_pcs0>,
+        <&iomuxc_gpio_ad_b1_14_lpspi3_sdo>,
+        <&iomuxc_gpio_ad_b1_15_lpspi3_sdi>;
+      drive-strength = "r0-6";
+      slew-rate = "slow";
+      nxp,speed = "100-mhz";
+    };
+  };
+};
