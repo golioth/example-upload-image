@@ -7,6 +7,7 @@
 #endif /* __ESP32HAL_H */
 
 #include "spi_hal.h"
+#include <zephyr/kernel.h>
 
 #define delayMs(ms) k_sleep(K_MSEC(ms))
 #define delayUs(us) k_sleep(K_USEC(us))
