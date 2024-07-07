@@ -6,10 +6,15 @@ This firmware uploads large files to an Amazon S3 bucket. It
 demonstrates capturing an image with a camera and uploading using the
 Golioth Firmware SDK for blockwise upload.
 
-The application will connect to Golioth and await user input. Pressing
-Button 1 will capture an image from the camera and upload to Golioth.
-Button 2 uploads a sample text file of 2246 bytes will be uploaded as a
-way for you to verify the data route is configured correctly.
+The application will connect to Golioth and await user input.
+
+- Pressing button1 will capture and upload an image.
+- Pressing button2 will upload a 2246 byte text file.
+- Calling `capture_image` with the Golioth RPC service will remotely
+  trigger image capture and upload.
+- The Pipeline found in the pipelines folder is responsible for routing
+  the image upload. By default it will be sent to an Amazon S3 bucket.
+  Captured images are jpg format.
 
 ## Supported Boards
 
@@ -137,6 +142,7 @@ This example implements the following Golioth services
 * Backend Logging
 * Device Settings
 * OTA Firmware Update
+* Remote Procedure Call (RPC)
 * Stream data using block upload
 
 ## Switch Between Zephyr and NCS
