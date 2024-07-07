@@ -7,9 +7,7 @@
 #ifndef __SPI_HAL_H
 #define __SPI_HAL_H
 
-#include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <stdint.h>
 
 void spiBegin(void);
 void spiCsOutputMode(int cs);

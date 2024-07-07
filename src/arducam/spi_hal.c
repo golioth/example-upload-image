@@ -5,7 +5,10 @@
  */
 
 #include "spi_hal.h"
-#include <string.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/toolchain.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app_spi, LOG_LEVEL_DBG);
