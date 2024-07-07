@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "golioth/golioth_status.h"
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(example_upload_image, LOG_LEVEL_DBG);
 
 #include <golioth/client.h>
 #include <golioth/fw_update.h>
+#include <golioth/rpc.h>
 #include <golioth/settings.h>
 #include <golioth/stream.h>
 #include <samples/common/net_connect.h>
@@ -28,7 +28,7 @@ static struct golioth_client *client;
 
 /* Program flow control */
 static k_tid_t _system_thread = 0;
-static volatile bool allow_button_read = false;
+static volatile bool allow_trigger = false;
 K_SEM_DEFINE(connected, 0, 1);
 
 K_SEM_DEFINE(image_upload, 0, 1);
@@ -172,9 +172,9 @@ static int upload_txt_file(void)
 void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 
-    if (allow_button_read)
+    if (allow_trigger)
     {
-        allow_button_read = false;
+        allow_trigger = false;
         LOG_DBG("Button %d pressed at %" PRIu32, pins, k_cycle_get_32());
 
         if (cb == &btn1_cb_data)
@@ -231,6 +231,21 @@ void init_buttons(void)
     gpio_init_callback(&btn2_cb_data, button_pressed, BIT(btn2.pin));
     gpio_add_callback(btn1.port, &btn1_cb_data);
     gpio_add_callback(btn2.port, &btn2_cb_data);
+}
+
+static enum golioth_rpc_status on_capture_image(zcbor_state_t *request_params_array,
+                                                zcbor_state_t *response_detail_map,
+                                                void *callback_arg)
+{
+
+    if (allow_trigger)
+    {
+        allow_trigger = false;
+        k_sem_give(&image_upload);
+        return GOLIOTH_RPC_OK;
+    }
+
+    return GOLIOTH_ERR_TIMEOUT;
 }
 
 enum golioth_status block_upload_camera_image_cb(uint32_t block_idx,
@@ -316,6 +331,10 @@ int main(void)
     /* Initialize Golioth OTA firmware update service */
     golioth_fw_update_init(client, _current_version);
 
+    /* Register Golioth RPC */
+    struct golioth_rpc *rpc = golioth_rpc_init(client);
+    golioth_rpc_register(rpc, "capture_image", on_capture_image, NULL);
+
     /* Register Golioth Settings service */
     app_settings_register(client);
 
@@ -324,7 +343,7 @@ int main(void)
     k_msleep(2000); /* allow connection logs to display */
 
     int err;
-    allow_button_read = true;
+    allow_trigger = true;
     LOG_INF("###############################################");
     LOG_INF("# Press button 1 to capture and upload image. #");
     LOG_INF("###############################################");
@@ -368,7 +387,7 @@ int main(void)
 
             events[0].state = K_POLL_STATE_NOT_READY;
             events[1].state = K_POLL_STATE_NOT_READY;
-            allow_button_read = true;
+            allow_trigger = true;
             LOG_INF("Press button 1 to capture and upload image.");
         }
     }
