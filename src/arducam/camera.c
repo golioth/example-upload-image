@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(golioth_camera, LOG_LEVEL_DBG);
 
 #include <Arducam/ArducamCamera.h>
+#include <stdlib.h>
 
 struct camera_module
 {
