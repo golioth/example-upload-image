@@ -32,12 +32,15 @@ model.
 
 | Function | Arducam Pin | nRF9160DK |  esp32  |  mimxrt1024_evk |
 | -------- | ----------- | --------- |  ------ |  -------------- |
-| VCC      | 1 (red)     | 5V        |  3.3V   |  3.3V  (J20.08) |
+| VCC      | 1 (red)     | VDD[^1]   |  3.3V   |  3.3V  (J20.08) |
 | GND      | 2 (black)   | GND       |  GND    |  GND   (J20.12) |
 | CS       | 6 (orange)  | P0.10     |  GPIO15 |  b1_13 (J18.08) |
 | MOSI     | 5 (yellow)  | P0.11     |  GPIO13 |  b1_14 (J18.12) |
 | MISO     | 4 (brown)   | P0.12     |  GPIO12 |  b1_15 (J18.10) |
 | SCK      | 3 (white)   | P0.13     |  GPIO27 |  b1_12 (J18.06) |
+
+[^1]: For the nRF9160DK, change the `VDD IO` switch (near the power
+    switch) to `3V`.
 
 ### ESP32 Extra Setup
 
