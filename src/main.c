@@ -139,11 +139,6 @@ static enum golioth_status block_upload_read_chunk(uint32_t block_idx,
         *block_size = bu_size;
         *is_last = true;
     }
-    else
-    {
-        *block_size = bu_max_block_size;
-        *is_last = false;
-    }
 
     memcpy(block_buffer, bu_source->buf + bu_offset, *block_size);
     return GOLIOTH_OK;
